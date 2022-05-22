@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+firmware/ad7606_f103/.pio
+firmware/ad7606_f103/.vscode
