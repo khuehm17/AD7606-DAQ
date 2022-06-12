@@ -33,3 +33,5 @@
 
 firmware/ad7606_f103/.pio
 firmware/ad7606_f103/.vscode
+
+hardware/stm_ad7606/stm_ad7606-backups
