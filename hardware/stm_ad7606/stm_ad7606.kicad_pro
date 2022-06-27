@@ -53,6 +53,11 @@
           "gap": 0.0,
           "via_gap": 0.0,
           "width": 0.0
+        },
+        {
+          "gap": 0.2032,
+          "via_gap": 0.2032,
+          "width": 0.261112
         }
       ],
       "drc_exclusions": [],
@@ -131,6 +136,18 @@
         {
           "diameter": 0.0,
           "drill": 0.0
+        },
+        {
+          "diameter": 0.508,
+          "drill": 0.254
+        },
+        {
+          "diameter": 0.762,
+          "drill": 0.381
+        },
+        {
+          "diameter": 0.9144,
+          "drill": 0.4572
         }
       ],
       "zones_allow_external_fillets": false,
