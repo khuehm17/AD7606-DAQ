@@ -42,11 +42,12 @@
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 DMA_HandleTypeDef hdma_spi1_rx;
+DMA_HandleTypeDef hdma_spi2_tx;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-uint8_t data_send = 32, data_receive = 0;
+uint8_t data_send = 12, data_receive = 0;
 
 /* USER CODE END PV */
 
@@ -114,9 +115,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	 HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, RESET);
-	 HAL_SPI_Transmit(&hspi2, &data_send, 1, 50);
+	 //HAL_SPI_Transmit(&hspi2, &data_send, 1, 100);
+	 //HAL_SPI_Transmit_DMA(&hspi2, &data_send, 1);
 	 HAL_SPI_Receive_DMA(&hspi1, &data_receive, 1);
-	 data_send++;
+
+	 //data_send++;
   }
   /* USER CODE END 3 */
 }
@@ -186,7 +189,7 @@ static void MX_SPI1_Init(void)
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
-  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
@@ -224,7 +227,7 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_SLAVE;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_HARD_INPUT;
@@ -285,8 +288,12 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -363,13 +370,70 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/*void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+/**
+  * @brief Over-sample Rate Configuration
+  * @param os_ratio (Only, 1,2,4,8,16,32,64 available)
+  * @retval None
+  */
+void ad7606_os_set (uint8_t os_ratio)
 {
-  if(hspi->Instance == SPI2)
-  {
-	  HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, SET);
-  }
-}*/
+	uint16_t os_val;
+	switch (os_ratio)
+	{
+	case 1: os_val = 0x000;
+	break;
+	case 2: os_val = 0x001;
+	break;
+	case 4: os_val = 0x010;
+	break;
+	case 8: os_val = 0x011;
+	break;
+	case 16: os_val = 0x100;
+	break;
+	case 32: os_val = 0x101;
+	break;
+	case 64: os_val = 0x110;
+	break;
+	default: os_val = 0x000;
+	}
+	HAL_GPIO_WritePin(AD_OS0_GPIO_Port, AD_OS0_Pin, os_val & 0x001);
+	HAL_GPIO_WritePin(AD_OS1_GPIO_Port, AD_OS1_Pin, (os_val >> 4) & 0x001);
+	HAL_GPIO_WritePin(AD_OS2_GPIO_Port, AD_OS2_Pin, (os_val >> 8) & 0x001);
+
+}
+
+/**
+  * @brief RESET bit Configuration
+  * @param None
+  * @retval None
+  */
+void ad7606_rst(void)
+{
+	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, RESET);
+	HAL_Delay(0.00005);
+	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, SET);
+	HAL_Delay(0.00005);
+	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, RESET);
+
+}
+
+/**
+  * @brief Busy Bit Configuration
+  * @param State (SET or RESET)
+  * @retval None
+  */
+void ad7606_busy (uint8_t State)
+{
+	if (State == RESET)
+	{
+		HAL_GPIO_WritePin(AD_BUSY_GPIO_Port, AD_BUSY_Pin, RESET);
+	}else
+	{
+		HAL_GPIO_WritePin(AD_BUSY_GPIO_Port, AD_BUSY_Pin, SET);
+	}
+}
+
+
 
 /* USER CODE END 4 */
 

@@ -51,6 +51,9 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+void ad7606_os_set (uint8_t os_ratio);
+void ad7606_rst(void);
+void ad7606_busy (uint8_t State);
 
 /* USER CODE BEGIN EFP */
 
