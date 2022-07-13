@@ -44,6 +44,9 @@ SPI_HandleTypeDef hspi2;
 DMA_HandleTypeDef hdma_spi1_rx;
 DMA_HandleTypeDef hdma_spi2_tx;
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim5;
+
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
@@ -58,12 +61,107 @@ static void MX_DMA_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/**
+  * @brief Over-sample Rate Configuration
+  * @param os_ratio (Only, 1,2,4,8,16,32,64 available)
+  * @retval None
+  */
+void ad7606_os_set (uint8_t os_ratio)
+{
+	uint16_t os_val;
+	switch (os_ratio)
+	{
+	case 1: os_val = 0x000;
+	break;
+	case 2: os_val = 0x001;
+	break;
+	case 4: os_val = 0x010;
+	break;
+	case 8: os_val = 0x011;
+	break;
+	case 16: os_val = 0x100;
+	break;
+	case 32: os_val = 0x101;
+	break;
+	case 64: os_val = 0x110;
+	break;
+	default: os_val = 0x000;
+	}
+	HAL_GPIO_WritePin(AD_OS0_GPIO_Port, AD_OS0_Pin, os_val & 0x001);
+	HAL_GPIO_WritePin(AD_OS1_GPIO_Port, AD_OS1_Pin, (os_val >> 4) & 0x001);
+	HAL_GPIO_WritePin(AD_OS2_GPIO_Port, AD_OS2_Pin, (os_val >> 8) & 0x001);
+}
+
+/**
+  * @brief RESET bit Configuration
+  * @param None
+  * @retval None
+  */
+void ad7606_rst_set(void)
+{
+	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, RESET);
+	HAL_Delay(0.00005);
+	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, SET);
+	HAL_Delay(0.00005);
+	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, RESET);
+
+}
+
+
+/**
+  * @brief Initialize States for ad7606
+  * @param None
+  * @retval None
+  */
+void ad7606_init(void)
+{
+	HAL_Delay(1);
+	//SER PIN??
+
+	//OS PINS
+	ad7606_os_set(1);
+
+	//RESET
+	ad7606_rst_set();
+
+	HAL_Delay(1);
+
+	//Start CONVST
+	ad7606_convst_set();
+
+}
+
+
+/**
+  * @brief Start Conversion
+  * @param None
+  * @retval None
+  */
+void ad7606_convst_set(void)
+{
+	HAL_TIMEx_PWMN_Start(&htim2, TIM_CHANNEL_3);
+	HAL_TIMEx_PWMN_Start(&htim5, TIM_CHANNEL_4);
+}
+
+/**
+  * @brief Data received via SPI Interface
+  * @param None
+  * @retval None
+  */
+void ad7606_receive(void)
+{
+	HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, RESET);
+	HAL_SPI_Receive_DMA(&hspi1, &data_receive, 1);
+}
 
 /* USER CODE END 0 */
 
@@ -99,11 +197,16 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
+  MX_TIM2_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
   //Follow HAL Procedures
   HAL_SPI_DeInit(&hspi1);
   HAL_SPI_Init(&hspi1);
+  ad7606_init();
+
+
 
   /* USER CODE END 2 */
 
@@ -114,12 +217,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	 HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, RESET);
-	 //HAL_SPI_Transmit(&hspi2, &data_send, 1, 100);
-	 //HAL_SPI_Transmit_DMA(&hspi2, &data_send, 1);
-	 HAL_SPI_Receive_DMA(&hspi1, &data_receive, 1);
 
-	 //data_send++;
+	 HAL_Delay(500);
+	 ad7606_convst_set();
+	 while ((HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_SET));
+	 HAL_Delay(10);
+	 ad7606_receive();
+
+
   }
   /* USER CODE END 3 */
 }
@@ -246,6 +351,104 @@ static void MX_SPI2_Init(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 4294967295;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 74;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
+  * @brief TIM5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM5_Init(void)
+{
+
+  /* USER CODE BEGIN TIM5_Init 0 */
+
+  /* USER CODE END TIM5_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM5_Init 1 */
+
+  /* USER CODE END TIM5_Init 1 */
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 0;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 4294967295;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 74;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim5, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM5_Init 2 */
+
+  /* USER CODE END TIM5_Init 2 */
+  HAL_TIM_MspPostInit(&htim5);
+
+}
+
+/**
   * @brief USB_OTG_FS Initialization Function
   * @param None
   * @retval None
@@ -338,22 +541,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM5;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /*Configure GPIO pin : AD_CS_Pin */
   GPIO_InitStruct.Pin = AD_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -370,68 +557,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/**
-  * @brief Over-sample Rate Configuration
-  * @param os_ratio (Only, 1,2,4,8,16,32,64 available)
-  * @retval None
-  */
-void ad7606_os_set (uint8_t os_ratio)
-{
-	uint16_t os_val;
-	switch (os_ratio)
-	{
-	case 1: os_val = 0x000;
-	break;
-	case 2: os_val = 0x001;
-	break;
-	case 4: os_val = 0x010;
-	break;
-	case 8: os_val = 0x011;
-	break;
-	case 16: os_val = 0x100;
-	break;
-	case 32: os_val = 0x101;
-	break;
-	case 64: os_val = 0x110;
-	break;
-	default: os_val = 0x000;
-	}
-	HAL_GPIO_WritePin(AD_OS0_GPIO_Port, AD_OS0_Pin, os_val & 0x001);
-	HAL_GPIO_WritePin(AD_OS1_GPIO_Port, AD_OS1_Pin, (os_val >> 4) & 0x001);
-	HAL_GPIO_WritePin(AD_OS2_GPIO_Port, AD_OS2_Pin, (os_val >> 8) & 0x001);
 
-}
 
-/**
-  * @brief RESET bit Configuration
-  * @param None
-  * @retval None
-  */
-void ad7606_rst(void)
-{
-	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, RESET);
-	HAL_Delay(0.00005);
-	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, SET);
-	HAL_Delay(0.00005);
-	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, RESET);
 
-}
-
-/**
-  * @brief Busy Bit Configuration
-  * @param State (SET or RESET)
-  * @retval None
-  */
-void ad7606_busy (uint8_t State)
-{
-	if (State == RESET)
-	{
-		HAL_GPIO_WritePin(AD_BUSY_GPIO_Port, AD_BUSY_Pin, RESET);
-	}else
-	{
-		HAL_GPIO_WritePin(AD_BUSY_GPIO_Port, AD_BUSY_Pin, SET);
-	}
-}
 
 
 

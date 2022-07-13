@@ -49,13 +49,18 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-void ad7606_os_set (uint8_t os_ratio);
-void ad7606_rst(void);
-void ad7606_busy (uint8_t State);
 
 /* USER CODE BEGIN EFP */
+
+void ad7606_os_set (uint8_t os_ratio);
+void ad7606_rst_set(void);
+void ad7606_init(void);
+void ad7606_convst_set(void);
+void ad7606_receive(void);
 
 /* USER CODE END EFP */
 
