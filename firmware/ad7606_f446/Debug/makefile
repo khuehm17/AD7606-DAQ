@@ -60,8 +60,8 @@ all: main-build
 main-build: ad7606_f446.elf secondary-outputs
 
 # Tool invocations
-ad7606_f446.elf ad7606_f446.map: $(OBJS) $(USER_OBJS) E:\AD7606-DAQ\firmware\ad7606_f446\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ad7606_f446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\AD7606-DAQ\firmware\ad7606_f446\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ad7606_f446.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ad7606_f446.elf ad7606_f446.map: $(OBJS) $(USER_OBJS) D:\New\ folder\AD7606-DAQ\firmware\ad7606_f446\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ad7606_f446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\New folder\AD7606-DAQ\firmware\ad7606_f446\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ad7606_f446.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
