@@ -49,6 +49,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -71,10 +73,6 @@ void ad7606_receive(void);
 #define AD_OS1_GPIO_Port GPIOA
 #define AD_OS0_Pin GPIO_PIN_1
 #define AD_OS0_GPIO_Port GPIOA
-#define ad_dou_a_Pin GPIO_PIN_2
-#define ad_dou_a_GPIO_Port GPIOA
-#define ad_dou_b_Pin GPIO_PIN_3
-#define ad_dou_b_GPIO_Port GPIOA
 #define AD_CS_Pin GPIO_PIN_4
 #define AD_CS_GPIO_Port GPIOA
 #define AD_SCK_Pin GPIO_PIN_5

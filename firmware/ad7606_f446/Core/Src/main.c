@@ -42,10 +42,12 @@
 SPI_HandleTypeDef hspi1;
 DMA_HandleTypeDef hdma_spi1_rx;
 
-PCD_HandleTypeDef hpcd_USB_OTG_FS;
+TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-uint8_t data_send = 12, data_receive = 0;
+uint8_t data_receive1 = 0, data_receive = 0;
+uint8_t alldata = 0;
+//static uint8_t st = DISABLE;
 
 /* USER CODE END PV */
 
@@ -53,8 +55,8 @@ uint8_t data_send = 12, data_receive = 0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -116,21 +118,20 @@ void ad7606_rst_set(void)
   */
 void ad7606_init(void)
 {
-	HAL_GPIO_WritePin(ad_dou_a_GPIO_Port, ad_dou_a_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(ad_dou_b_GPIO_Port, ad_dou_b_Pin, GPIO_PIN_SET);
-	HAL_Delay(1);
+
+	//HAL_Delay(1);
 	//SER PIN??
 
 	//OS PINS
-	ad7606_os_set(1);
+	ad7606_os_set(64);
 
 	//RESET
-	ad7606_rst_set();
+	//ad7606_rst_set();
 
-	HAL_Delay(1);
+	//HAL_Delay(1);
 
 	//Start CONVST
-	ad7606_convst_set();
+	//ad7606_convst_set();
 
 }
 
@@ -142,12 +143,13 @@ void ad7606_init(void)
   */
 void ad7606_convst_set(void)
 {
-	HAL_GPIO_WritePin(ad_dou_a_GPIO_Port, ad_dou_a_Pin, GPIO_PIN_RESET);
+	/*HAL_GPIO_WritePin(ad_dou_a_GPIO_Port, ad_dou_a_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(ad_dou_b_GPIO_Port, ad_dou_b_Pin, GPIO_PIN_RESET);
 	HAL_Delay(1);
 	HAL_GPIO_WritePin(ad_dou_a_GPIO_Port, ad_dou_a_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(ad_dou_b_GPIO_Port, ad_dou_b_Pin, GPIO_PIN_SET);
-	HAL_Delay(1);
+	HAL_Delay(1);*/
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 
 
 }
@@ -194,8 +196,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_USB_OTG_FS_PCD_Init();
   MX_SPI1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   //Follow HAL Procedures
@@ -215,11 +217,29 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	 HAL_Delay(500);
+	 /*HAL_Delay(500);
 	 ad7606_convst_set();
 	 while ((HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_SET));
 	 HAL_Delay(10);
-	 ad7606_receive();
+	 ad7606_receive();*/
+	 /*if (HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_RESET)
+	 {
+		 if (st == DISABLE)
+		 {
+			 HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, 0);
+			 HAL_Delay(0.00003);
+			 HAL_SPI_Receive_DMA(&hspi1, &data_receive, 1);
+			if (data_receive <= 8 )
+			 {
+				 alldata = data_receive | HAL_SPI_Receive_DMA(&hspi1, &data_receive1, 1);
+			 }
+		 //}
+
+	 }*/
+	  HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, 0);
+	  			 HAL_Delay(0.00003);
+	  			 HAL_SPI_Receive_DMA(&hspi1, &data_receive, 1);
+	 HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, 1);
 
 
   }
@@ -238,7 +258,7 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -247,12 +267,19 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 13;
-  RCC_OscInitStruct.PLL.PLLN = 72;
+  RCC_OscInitStruct.PLL.PLLM = 25;
+  RCC_OscInitStruct.PLL.PLLN = 360;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 3;
-  RCC_OscInitStruct.PLL.PLLR = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 5;
+  RCC_OscInitStruct.PLL.PLLR = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Activate the Over-Drive mode
+  */
+  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
     Error_Handler();
   }
@@ -261,12 +288,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
     Error_Handler();
   }
@@ -292,10 +319,10 @@ static void MX_SPI1_Init(void)
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -311,37 +338,51 @@ static void MX_SPI1_Init(void)
 }
 
 /**
-  * @brief USB_OTG_FS Initialization Function
+  * @brief TIM2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USB_OTG_FS_PCD_Init(void)
+static void MX_TIM2_Init(void)
 {
 
-  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+  /* USER CODE BEGIN TIM2_Init 0 */
 
-  /* USER CODE END USB_OTG_FS_Init 0 */
+  /* USER CODE END TIM2_Init 0 */
 
-  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
 
-  /* USER CODE END USB_OTG_FS_Init 1 */
-  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
-  hpcd_USB_OTG_FS.Init.dev_endpoints = 6;
-  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 32.5 - 1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 125-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 124-1;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
 
-  /* USER CODE END USB_OTG_FS_Init 2 */
+  /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -379,7 +420,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, AD_RST_Pin|AD_OS2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, AD_OS1_Pin|AD_OS0_Pin|ad_dou_a_Pin|ad_dou_b_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, AD_OS1_Pin|AD_OS0_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, GPIO_PIN_SET);
@@ -391,11 +432,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : AD_OS1_Pin AD_OS0_Pin ad_dou_a_Pin ad_dou_b_Pin */
-  GPIO_InitStruct.Pin = AD_OS1_Pin|AD_OS0_Pin|ad_dou_a_Pin|ad_dou_b_Pin;
+  /*Configure GPIO pins : AD_OS1_Pin AD_OS0_Pin */
+  GPIO_InitStruct.Pin = AD_OS1_Pin|AD_OS0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF2_TIM5;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : AD_CS_Pin */
