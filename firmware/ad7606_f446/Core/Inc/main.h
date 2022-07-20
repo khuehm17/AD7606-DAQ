@@ -79,6 +79,8 @@ void ad7606_receive(void);
 #define AD_SCK_GPIO_Port GPIOA
 #define AD_DOU_A_Pin GPIO_PIN_6
 #define AD_DOU_A_GPIO_Port GPIOA
+#define AD_DOU_A_TEST_Pin GPIO_PIN_7
+#define AD_DOU_A_TEST_GPIO_Port GPIOA
 #define AD_BUSY_Pin GPIO_PIN_4
 #define AD_BUSY_GPIO_Port GPIOC
 #define AD_FRST_Pin GPIO_PIN_5

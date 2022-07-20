@@ -49,8 +49,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -59,24 +57,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define AD_OS2_Pin GPIO_PIN_3
-#define AD_OS2_GPIO_Port GPIOC
-#define AD_OS1_Pin GPIO_PIN_0
-#define AD_OS1_GPIO_Port GPIOA
-#define AD_OS0_Pin GPIO_PIN_1
-#define AD_OS0_GPIO_Port GPIOA
-#define AD_ST_A_Pin GPIO_PIN_2
-#define AD_ST_A_GPIO_Port GPIOA
-#define AD_ST_B_Pin GPIO_PIN_3
-#define AD_ST_B_GPIO_Port GPIOA
-#define AD_CS_Pin GPIO_PIN_4
-#define AD_CS_GPIO_Port GPIOA
-#define AD_SCK_Pin GPIO_PIN_5
-#define AD_SCK_GPIO_Port GPIOA
-#define AD_DOU_A_Pin GPIO_PIN_6
-#define AD_DOU_A_GPIO_Port GPIOA
-#define AD_BUSY_Pin GPIO_PIN_4
-#define AD_BUSY_GPIO_Port GPIOC
+#define REST_Pin GPIO_PIN_2
+#define REST_GPIO_Port GPIOC
+#define CO_A_Pin GPIO_PIN_2
+#define CO_A_GPIO_Port GPIOA
+#define CO_B_Pin GPIO_PIN_3
+#define CO_B_GPIO_Port GPIOA
+#define BUSY_Pin GPIO_PIN_4
+#define BUSY_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
