@@ -55,12 +55,14 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void AD7606_RST(void);
+void AD7606_OS_SET(void);
+void AD7606_Delay (uint32_t Delay);
+void AD7606_StartReadBytes(SPI_HandleTypeDef *hspi, int16_t *pDst, uint16_t Length);
+void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst);
+void AD7606_CO_START(void);
+void AD7606_CO_STOP(void);
 
-void ad7606_os_set (uint8_t os_ratio);
-void ad7606_rst_set(void);
-void ad7606_init(void);
-void ad7606_convst_set(void);
-void ad7606_receive(void);
 
 /* USER CODE END EFP */
 
@@ -79,12 +81,12 @@ void ad7606_receive(void);
 #define AD_SCK_GPIO_Port GPIOA
 #define AD_DOU_A_Pin GPIO_PIN_6
 #define AD_DOU_A_GPIO_Port GPIOA
-#define AD_DOU_A_TEST_Pin GPIO_PIN_7
-#define AD_DOU_A_TEST_GPIO_Port GPIOA
 #define AD_BUSY_Pin GPIO_PIN_4
 #define AD_BUSY_GPIO_Port GPIOC
 #define AD_FRST_Pin GPIO_PIN_5
 #define AD_FRST_GPIO_Port GPIOC
+#define AD_CO_A_Pin GPIO_PIN_3
+#define AD_CO_A_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

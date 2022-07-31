@@ -53,18 +53,38 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void AD7606_RST(void);
+void AD7606_OS_SET(void);
+void AD7606_Delay (uint32_t Delay);
+void AD7606_StartReadBytes(SPI_HandleTypeDef *hspi, int16_t *pDst, uint16_t Length);
+void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst);
+void AD7606_CO_START(void);
+void AD7606_CO_STOP(void);
+
 
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define REST_Pin GPIO_PIN_2
-#define REST_GPIO_Port GPIOC
-#define CO_A_Pin GPIO_PIN_2
-#define CO_A_GPIO_Port GPIOA
-#define CO_B_Pin GPIO_PIN_3
-#define CO_B_GPIO_Port GPIOA
-#define BUSY_Pin GPIO_PIN_4
-#define BUSY_GPIO_Port GPIOC
+#define AD_RST_Pin GPIO_PIN_2
+#define AD_RST_GPIO_Port GPIOC
+#define AD_OS2_Pin GPIO_PIN_3
+#define AD_OS2_GPIO_Port GPIOC
+#define AD_OS1_Pin GPIO_PIN_0
+#define AD_OS1_GPIO_Port GPIOA
+#define AD_OS0_Pin GPIO_PIN_1
+#define AD_OS0_GPIO_Port GPIOA
+#define AD_CS_Pin GPIO_PIN_4
+#define AD_CS_GPIO_Port GPIOA
+#define AD_SCK_Pin GPIO_PIN_5
+#define AD_SCK_GPIO_Port GPIOA
+#define AD_DOU_A_Pin GPIO_PIN_6
+#define AD_DOU_A_GPIO_Port GPIOA
+#define AD_BUSY_Pin GPIO_PIN_4
+#define AD_BUSY_GPIO_Port GPIOC
+#define AD_FRST_Pin GPIO_PIN_5
+#define AD_FRST_GPIO_Port GPIOC
+#define AD_CO_A_Pin GPIO_PIN_3
+#define AD_CO_A_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
