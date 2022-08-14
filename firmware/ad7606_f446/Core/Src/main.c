@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
+#include "stdio.h"
+//#include "string.h"
 
 /* USER CODE END Includes */
 
@@ -48,13 +50,18 @@ DMA_HandleTypeDef hdma_spi1_rx;
 
 TIM_HandleTypeDef htim2;
 
+UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN PV */
 /*uint16_t data_receive = 1;
 
 uint8_t data[4];*/
 int16_t bufferi[8] = {1};
 float bufferf [8];
+char tx_data[6] = {0,0,0,0,0};
+char c;
 uint8_t dummy = 0b00000000;
+uint8_t data[] = "Hello World from USB CDC";
 
 /* USER CODE END PV */
 
@@ -64,6 +71,7 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -110,7 +118,8 @@ void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst)
 	uint16_t i;
 	for (i = 0; i < Length; i++)
 	{
-		pDst[i] = (float)pSrc[i] * 10.0 * 2.5 / 3.3 / 32768.0;
+		pDst[i] = ((float)pSrc[i] * 5.5) / 32768.0;
+		//pDst[i] = ((float)pSrc[i] * 10 * (2.5/4.5)) / 32768.0;
 	}
 	return;
 }
@@ -127,21 +136,6 @@ void AD7606_CO_STOP(void)
 	//HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, 1);
 }
 
-/*uint8_t AD7606_BSY_CallBack(void)
-{
-	uint8_t retry = 0;
-	AD_CS_L;
-	//HAL_SPI_Transmit(&hspi1, &dummy, 1, 100);
-	while (hspi1.Instance->SR & (1<<SPI_SR_RXNE))
-	{
-		retry++;
-		//if (retry>200) return 0x1010;
-	}
-	HAL_SPI_Receive(&hspi1, &data_receive, 1, 1000);
-	AD_CS_H;
-	return data_receive;
-
-}*/
 
 
 
@@ -180,6 +174,7 @@ int main(void)
   MX_TIM2_Init();
   MX_SPI1_Init();
   MX_USB_DEVICE_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   AD7606_OS_SET();
@@ -202,7 +197,24 @@ int main(void)
 	  AD7606_StartReadBytes(&hspi1, bufferi, 8);
 	  AD7606_ConvertToVoltage(8, bufferi, bufferf);
 
-	  //CDC_Transmit_FS(&dummy, 1);
+	  //sprintf(tx_data, "%p", bufferf);
+	  //c = sprintf(tx_data, "%f", bufferf);
+
+
+
+	  /*for (int i = 0; i<=7; i++)
+	  {
+
+	  }*/
+	  uint8_t a[1] = {59};
+	  HAL_UART_Transmit(&huart2, (uint8_t*)(itoa((int)bufferi[1], tx_data, 10)), 5, 10);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)(itoa((int)bufferf[1], tx_data, 10)), 5, 10);
+	  HAL_UART_Transmit(&huart2, a, 1, 1);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)(sprintf(tx_data, "%f/n", bufferf[1])), 8, 10);
+
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)bufferi, 8, 10);
+	  //HAL_Delay(1000);
+
 
 
 
@@ -352,6 +364,39 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
 
 }
 
