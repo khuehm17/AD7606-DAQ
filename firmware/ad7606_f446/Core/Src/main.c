@@ -79,24 +79,23 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void AD7606_OS_SET(void)
+/*void AD7606_OS_SET(void)
 {
 	HAL_GPIO_WritePin(AD_OS0_GPIO_Port, AD_OS0_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(AD_OS1_GPIO_Port, AD_OS1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(AD_OS2_GPIO_Port, AD_OS2_Pin, GPIO_PIN_RESET);
-}
+}*/
 
 
 void AD7606_RST(void)
 {
+
 	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, GPIO_PIN_SET);
-	AD7606_Delay(100);
+	HAL_Delay(1);
 	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, GPIO_PIN_RESET);
 }
 
-void AD7606_Delay (uint32_t Delay)
+/*void AD7606_Delay (uint32_t Delay)
 {
 	uint32_t i;
 	for (i = 0; i < Delay; i++)
@@ -104,10 +103,11 @@ void AD7606_Delay (uint32_t Delay)
 		__NOP();
 	}
 	return;
-}
+}*/
 void AD7606_StartReadBytes(SPI_HandleTypeDef *hspi, int16_t *pDst, uint16_t Length)
 {
 	while (HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_SET);
+	HAL_Delay(0.000015);
 	HAL_SPI_Receive_DMA(hspi, (uint8_t*)pDst, Length);
 	return;
 
@@ -120,6 +120,7 @@ void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst)
 	{
 		pDst[i] = ((float)pSrc[i] * 5.5) / 32768.0;
 		//pDst[i] = ((float)pSrc[i] * 10 * (2.5/4.5)) / 32768.0;
+		//pDst[i] = (pSrc[i] * 0.00016954);
 	}
 	return;
 }
@@ -128,11 +129,13 @@ void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst)
 void AD7606_CO_START(void)
 {
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2); //Start AD7606 Conversion
+	//HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 }
 
 void AD7606_CO_STOP(void)
 {
 	HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2); //Stop conversion
+	//HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
 	//HAL_GPIO_WritePin(AD_CS_GPIO_Port, AD_CS_Pin, 1);
 }
 
@@ -177,7 +180,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  AD7606_OS_SET();
+  //AD7606_OS_SET();
   AD7606_RST();
   AD7606_CO_START();
 
@@ -291,7 +294,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -360,6 +363,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
+
 
 
   /* USER CODE END TIM2_Init 2 */
