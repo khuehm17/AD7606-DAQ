@@ -109,6 +109,10 @@ void AD7606_StartReadBytes(SPI_HandleTypeDef *hspi, int16_t *pDst, uint16_t Leng
 	while (HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_SET);
 	HAL_Delay(0.000015);
 	HAL_SPI_Receive_DMA(hspi, (uint8_t*)pDst, Length);
+
+//	HAL_SPI_Receive(hspi, (uint8_t*)pDst, Length, 10);
+	//HAL_SPI_Receive(hspi, pDst, Length, 10);
+//	HAL_SPI_TransmitReceive_DMA(hspi, &dummy, (uint8_t*)pDst, Length);
 	return;
 
 }
@@ -118,9 +122,10 @@ void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst)
 	uint16_t i;
 	for (i = 0; i < Length; i++)
 	{
-		pDst[i] = ((float)pSrc[i] * 5.5) / 32768.0;
+		//pDst[i] = ((float)pSrc[i] * 5.5 ) / 32767.0;
 		//pDst[i] = ((float)pSrc[i] * 10 * (2.5/4.5)) / 32768.0;
 		//pDst[i] = (pSrc[i] * 0.00016954);
+		pDst[i] = ((float)pSrc[i] * 10) / 32768.0;
 	}
 	return;
 }
@@ -180,6 +185,10 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  //follow spi hal procedure
+  HAL_SPI_DeInit(&hspi1);
+  HAL_SPI_Init(&hspi1);
+
   //AD7606_OS_SET();
   AD7606_RST();
   AD7606_CO_START();
@@ -198,25 +207,14 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  AD7606_StartReadBytes(&hspi1, bufferi, 8);
+
 	  AD7606_ConvertToVoltage(8, bufferi, bufferf);
 
-	  //sprintf(tx_data, "%p", bufferf);
-	  //c = sprintf(tx_data, "%f", bufferf);
+//	  uint8_t a[1] = {59};
+//	  HAL_UART_Transmit(&huart2, (uint8_t*)(itoa((int)bufferi[1], tx_data, 10)), 5, 10);
 
+//	  HAL_UART_Transmit(&huart2, a, 1, 1);
 
-
-	  /*for (int i = 0; i<=7; i++)
-	  {
-
-	  }*/
-	  uint8_t a[1] = {59};
-	  HAL_UART_Transmit(&huart2, (uint8_t*)(itoa((int)bufferi[1], tx_data, 10)), 5, 10);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)(itoa((int)bufferf[1], tx_data, 10)), 5, 10);
-	  HAL_UART_Transmit(&huart2, a, 1, 1);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)(sprintf(tx_data, "%f/n", bufferf[1])), 8, 10);
-
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)bufferi, 8, 10);
-	  //HAL_Delay(1000);
 
 
 
@@ -294,7 +292,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
