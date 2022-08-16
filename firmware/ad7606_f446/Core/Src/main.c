@@ -108,9 +108,9 @@ void AD7606_StartReadBytes(SPI_HandleTypeDef *hspi, int16_t *pDst, uint16_t Leng
 {
 	while (HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_SET);
 	HAL_Delay(0.000015);
-	HAL_SPI_Receive_DMA(hspi, (uint8_t*)pDst, Length);
+//	HAL_SPI_Receive_DMA(hspi, (uint8_t*)pDst, Length);
 
-//	HAL_SPI_Receive(hspi, (uint8_t*)pDst, Length, 10);
+	HAL_SPI_Receive(hspi, (uint8_t*)pDst, Length, 10);
 	//HAL_SPI_Receive(hspi, pDst, Length, 10);
 //	HAL_SPI_TransmitReceive_DMA(hspi, &dummy, (uint8_t*)pDst, Length);
 	return;
@@ -287,7 +287,7 @@ static void MX_SPI1_Init(void)
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
