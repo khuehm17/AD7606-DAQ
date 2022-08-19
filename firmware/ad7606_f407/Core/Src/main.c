@@ -47,10 +47,13 @@ DMA_HandleTypeDef hdma_spi1_rx;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
+int16_t adcDataBuf[ADC_DATA_BUF_SIZE] = {0};
 
-int16_t adcDataBuf[ADC_DATA_BUF_SIZE] = {1};
 float voltageDataBuf[VOLTAGE_DATA_BUF_SIZE];
+
 char usbTxDataBuf[USB_TX_DATA_BUF_SIZE] = {0};
+
+AD7606_HandleTyeDef had7606;
 
 
 /* USER CODE END PV */
@@ -63,65 +66,12 @@ static void MX_SPI1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void AD7606_RST(void)
-{
 
-	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, GPIO_PIN_SET);
-	HAL_Delay(1);
-	HAL_GPIO_WritePin(AD_RST_GPIO_Port, AD_RST_Pin, GPIO_PIN_RESET);
-}
-
-
-void AD7606_StartReadBytes(SPI_HandleTypeDef *hspi, int16_t *pDst, uint16_t Length)
-{
-	while (HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_SET);
-	HAL_Delay(0.000015);
-//	HAL_SPI_Receive_DMA(hspi, (uint8_t*)pDst, Length);
-
-	HAL_SPI_Receive(hspi, (uint8_t*)pDst, Length, 10);
-	//HAL_SPI_Receive(hspi, pDst, Length, 10);
-//	HAL_SPI_TransmitReceive_DMA(hspi, &dummy, (uint8_t*)pDst, Length);
-	return;
-
-}
-
-void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst)
-{
-	//convert to voltage with 2.5V reference
-	uint16_t i;
-	for (i = 0; i < Length; i++)
-	{
-
-		pDst[i] = ((float)pSrc[i] * 10) / 32768.0;
-	}
-	return;
-}
-
-
-void AD7606_CVST_START(void)
-{
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2); //Start AD7606 Conversion
-
-}
-
-void AD7606_CVST_STOP(void)
-{
-	HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2); //Stop conversion
-
-}
-
-void LED_Toggle(void)
-{
-	HAL_GPIO_WritePin(USER_LED_GPIO_Port, USER_LED_Pin, GPIO_PIN_SET);
-	HAL_Delay(1000);
-	HAL_GPIO_WritePin(USER_LED_GPIO_Port, USER_LED_Pin, GPIO_PIN_RESET);
-	HAL_Delay(1000);
-
-}
 
 /* USER CODE END 0 */
 
@@ -141,6 +91,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  AD7606_Init(&had7606, &hspi1, &hdma_spi1_rx, &htim2);
 
   /* USER CODE END Init */
 
@@ -159,8 +110,9 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
+  AD7606_OS_SET(1);
   AD7606_RST();
-  AD7606_CVST_START();
+  AD7606_CVST_START(&had7606);
 
   /* USER CODE END 2 */
 
@@ -171,13 +123,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  LED_Toggle();
 
-	  AD7606_StartReadBytes(&hspi1, adcDataBuf, ADC_DATA_BUF_SIZE);
-	  AD7606_ConvertToVoltage(VOLTAGE_DATA_BUF_SIZE, adcDataBuf, voltageDataBuf);
+//	  AD7606_StartReadBytes(&had7606, adcDataBuf, ADC_DATA_BUF_SIZE, 10);
+	  AD7606_StartReadBytes_DMA(&had7606, adcDataBuf, ADC_DATA_BUF_SIZE);
+	  AD7606_ConvertToVoltage(READ_8_CHANNEL, adcDataBuf, voltageDataBuf);
 
-	  CDC_Transmit_FS((uint8_t*)(itoa((int)adcDataBuf[ADC_CHANNEL_1], usbTxDataBuf, 10)), USB_TX_DATA_BUF_SIZE);
-	  HAL_Delay(500);
+	  CDC_Transmit_FS((uint8_t*)(itoa((int)adcDataBuf[ADC_CHANNEL_7], usbTxDataBuf, 10)), USB_TX_DATA_BUF_SIZE);
+
   }
   /* USER CODE END 3 */
 }
@@ -245,12 +197,12 @@ static void MX_SPI1_Init(void)
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
   hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -285,7 +237,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 840;
+  htim2.Init.Prescaler = 84;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 99;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -310,7 +262,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 97;
+  sConfigOC.Pulse = 95;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
@@ -395,6 +347,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 
 /* USER CODE END 4 */
 

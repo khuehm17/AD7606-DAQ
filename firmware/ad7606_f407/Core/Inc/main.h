@@ -31,21 +31,12 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ad7606.h"
 
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-enum ADC_CHANNEL {
-	ADC_CHANNEL_1 = 0,
-	ADC_CHANNEL_2 = 1,
-	ADC_CHANNEL_3 = 2,
-	ADC_CHANNEL_4 = 3,
-	ADC_CHANNEL_5 = 4,
-	ADC_CHANNEL_6 = 5,
-	ADC_CHANNEL_7 = 6,
-	ADC_CHANNEL_8 = 7,
-};
 
 /* USER CODE END ET */
 
@@ -56,9 +47,7 @@ enum ADC_CHANNEL {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define ADC_DATA_BUF_SIZE		(8U)
-#define VOLTAGE_DATA_BUF_SIZE	(8U)
-#define USB_TX_DATA_BUF_SIZE	(8U)
+
 /* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -67,14 +56,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-void AD7606_RST(void);
-void AD7606_OS_SET(void);
-void AD7606_Delay (uint32_t Delay);
-void AD7606_StartReadBytes(SPI_HandleTypeDef *hspi, int16_t *pDst, uint16_t Length);
-void AD7606_ConvertToVoltage (uint16_t Length, int16_t *pSrc, float *pDst);
-void AD7606_CVST_START(void);
-void AD7606_CVST_STOP(void);
-void LED_Toggle(void);
+
 
 /* USER CODE END EFP */
 
