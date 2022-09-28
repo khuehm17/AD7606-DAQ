@@ -128,7 +128,7 @@ int main(void)
 	  AD7606_StartReadBytes_DMA(&had7606, adcDataBuf, ADC_DATA_BUF_SIZE);
 	  AD7606_ConvertToVoltage(READ_8_CHANNEL, adcDataBuf, voltageDataBuf);
 
-	  CDC_Transmit_FS((uint8_t*)(itoa((int)adcDataBuf[ADC_CHANNEL_7], usbTxDataBuf, 10)), USB_TX_DATA_BUF_SIZE);
+//	  CDC_Transmit_FS((uint8_t*)(itoa((int)adcDataBuf[ADC_CHANNEL_7], usbTxDataBuf, 10)), USB_TX_DATA_BUF_SIZE);
 
   }
   /* USER CODE END 3 */

@@ -153,7 +153,7 @@ HAL_StatusTypeDef AD7606_StartReadBytes_DMA(AD7606_HandleTyeDef *dev,
 	dev->adcDataBufSize = Size;
 	//wait until the BUSY pin is at reset state (Logic "0")
 	while (HAL_GPIO_ReadPin(AD_BUSY_GPIO_Port, AD_BUSY_Pin) == GPIO_PIN_SET);
-	HAL_Delay(0.0000015);
+//	HAL_Delay(0.0000015);
 	return HAL_SPI_Receive_DMA(dev->hspi, (uint8_t*) dev->pAdcDataBufPtr,
 			dev->adcDataBufSize);
 }
